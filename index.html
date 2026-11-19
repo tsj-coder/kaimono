@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>買い物リスト</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E8352B; --red-deep: #C92A21; --red-soft: #FDE3E1;
+    --bg: #FBF5EE; --card: #FFFFFF; --tile: #F6EEE6; --line: #EFE5DB;
+    --text: #2E2622; --muted: #9A8C83; --radius: 22px;
+    --shadow: 0 8px 24px rgba(120, 60, 40, .10);
+    --tabbar: 64px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body { font-family: 'M PLUS Rounded 1c', 'Hiragino Maru Gothic ProN', sans-serif; font-size: 15px; line-height: 1.5; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; background: none; padding: 0; }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; padding-bottom: calc(var(--tabbar) + 90px + env(safe-area-inset-bottom)); }
+
+  /* 上部の赤い帯 */
+  .hero { background: var(--red); color: #fff; padding: calc(16px + env(safe-area-inset-top)) 18px 22px; border-radius: 0 0 var(--radius) var(--radius); }
+  .hero.tall { padding-bottom: 42px; }
+  .hero-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .hero h1 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: .04em; }
+  .hero h1 b { font-size: 30px; margin: 0 3px; }
+  .hero .sync { font-size: 11px; opacity: .85; white-space: nowrap; }
+  .hero .gear { width: 28px; height: 28px; margin-left: 8px; align-self: center; color: #fff; display: grid; place-items: center; opacity: .9; }
+  .hero .gear svg { width: 20px; height: 20px; }
+  .hero .search { margin-top: 12px; position: relative; }
+  .hero .search svg { position: absolute; left: 14px; top: 50%; width: 18px; height: 18px; margin-top: -9px; color: var(--muted); }
+  .hero .search input { width: 100%; border: 0; outline: none; border-radius: 99px; padding: 12px 40px 12px 40px; background: #fff; color: var(--text); font-size: 16px; }
+  .hero .search .clear { position: absolute; right: 8px; top: 50%; width: 28px; height: 28px; margin-top: -14px; border-radius: 99px; background: var(--tile); color: var(--muted); font-size: 14px; }
+
+  /* 並べ方 */
+  .sorts { display: flex; justify-content: center; gap: 8px; margin: -20px 12px 0; position: relative; }
+  .sorts button { padding: 8px 16px; border-radius: 99px; background: var(--card); box-shadow: var(--shadow); font-size: 13px; font-weight: 700; color: var(--muted); }
+  .sorts button.on { background: var(--red-deep); color: #fff; box-shadow: 0 6px 16px rgba(201, 42, 33, .3); }
+
+  main { padding: 0 12px; }
+  .group { margin-top: 18px; }
+  .group h3 { margin: 0 8px 8px; font-size: 14px; font-weight: 800; display: flex; align-items: baseline; gap: 8px; }
+  .group h3 small { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .list { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+
+  /* リストの行 */
+  .row { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 12px; border-top: 1px solid var(--line); cursor: pointer; transition: opacity .2s; }
+  .row:first-child { border-top: 0; }
+  .row .txt { flex: 1; min-width: 0; }
+  .row .nm { font-weight: 800; font-size: 15px; line-height: 1.35; word-break: break-all; }
+  .row .qty { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 6px; white-space: nowrap; }
+  .row .foot { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+  .row .memo { flex: 1; min-width: 0; font-size: 12px; color: var(--text); opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .date { flex: none; margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .tag { display: inline-block; vertical-align: 2px; font-size: 10px; font-weight: 800; line-height: 1; padding: 4px 6px; border-radius: 6px; margin-right: 5px; }
+  .tag.urgent { background: var(--red); color: #fff; }
+  .tag.unsent { background: var(--tile); color: var(--muted); margin: 0 0 0 6px; }
+  .tag.new { background: var(--red-soft); color: var(--red-deep); margin: 0 0 0 6px; letter-spacing: .04em; }
+  .chk { width: 34px; height: 34px; flex: none; border-radius: 99px; border: 2px solid var(--line); display: grid; place-items: center; color: #fff; background: #fff; }
+  .chk svg { width: 18px; height: 18px; opacity: 0; }
+  .row.pend { opacity: .5; }
+  .row.pend .nm { text-decoration: line-through; }
+  .row.pend .chk { background: var(--red); border-color: var(--red); }
+  .row.pend .chk svg { opacity: 1; }
+
+  /* 丸い画像 */
+  .pic { flex: none; border-radius: 99px; background: var(--tile); display: grid; place-items: center; overflow: hidden; color: var(--muted); font-weight: 800; }
+  .pic img { width: 84%; height: 84%; object-fit: contain; display: block; }
+  .pic.photo img { width: 100%; height: 100%; object-fit: cover; }
+  .pic.s56 { width: 56px; height: 56px; font-size: 20px; }
+  .pic.s64 { width: 64px; height: 64px; font-size: 22px; }
+  .pic.s88 { width: 88px; height: 88px; font-size: 30px; }
+
+  .empty { text-align: center; color: var(--muted); padding: 36px 16px; font-size: 13px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); margin-top: 22px; }
+  .empty b { display: block; font-size: 17px; color: var(--text); margin-bottom: 4px; }
+  .empty .btn { margin-top: 16px; }
+
+  /* カテゴリの横スクロール */
+  .cats { display: flex; align-items: flex-start; gap: 4px; overflow-x: auto; padding: 0 12px 6px; margin-top: -30px; position: relative; scrollbar-width: none; }
+  .cats::-webkit-scrollbar { display: none; }
+  .cat { flex: none; width: 74px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; }
+  .cat .ring { width: 60px; height: 60px; margin: 0 auto; border-radius: 99px; background: var(--card); box-shadow: var(--shadow); display: grid; place-items: center; overflow: hidden; border: 3px solid var(--card); color: var(--red); }
+  .cat .ring img { width: 80%; height: 80%; object-fit: contain; }
+  .cat .ring svg { width: 26px; height: 26px; }
+  .cat .ring .ph { font-weight: 800; font-size: 20px; color: var(--muted); }
+  .cat .name { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.3; font-weight: 700; word-break: keep-all; overflow-wrap: anywhere; }
+  .cat.on .ring { background: var(--red); border-color: #fff; box-shadow: 0 0 0 2px var(--red), 0 8px 18px rgba(232, 53, 43, .35); color: #fff; }
+  .cat.on .ring .ph { color: #fff; }
+  .cat.on .name { color: var(--red-deep); }
+
+  /* 品物の格子 */
+  .grid-title { margin: 14px 8px 8px; font-size: 14px; font-weight: 800; display: flex; align-items: baseline; gap: 8px; }
+  .grid-title small { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .card { position: relative; background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 10px 4px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+  .card .nm { font-size: 12px; font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-all; min-height: 2.6em; }
+  .card .badge.unsent { right: auto; left: 5px; background: var(--muted); }
+  .hero .offline { margin-top: 8px; font-size: 12px; font-weight: 700; background: rgba(255, 255, 255, .22); border-radius: 8px; padding: 5px 10px; }
+  .card .badge { position: absolute; top: 5px; right: 5px; font-size: 9px; font-weight: 800; padding: 3px 5px; border-radius: 6px; background: var(--red); color: #fff; line-height: 1; }
+  .card.listed .pic { box-shadow: 0 0 0 2px var(--red-soft); }
+  .card.plus .pic { background: var(--red-soft); color: var(--red); font-size: 28px; }
+  .note { font-size: 12px; color: var(--muted); text-align: center; margin: 22px 8px; }
+
+  /* ボタン */
+  .btn { display: block; width: 100%; padding: 15px; border-radius: 99px; font-weight: 800; text-align: center; font-size: 16px; }
+  .btn.primary { background: var(--red); color: #fff; box-shadow: 0 8px 20px rgba(232, 53, 43, .3); }
+  .btn.primary:disabled { opacity: .6; }
+  .btn.text { background: transparent; color: var(--muted); font-weight: 700; font-size: 14px; padding: 12px; margin-top: 6px; }
+  .btn.small { display: inline-block; width: auto; padding: 10px 22px; font-size: 14px; }
+
+  /* 下のタブ */
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--card); box-shadow: 0 -4px 20px rgba(120, 60, 40, .08); padding-bottom: env(safe-area-inset-bottom); }
+  .tabbar .in { max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; height: var(--tabbar); }
+  .tabbar button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 11px; font-weight: 800; color: var(--muted); }
+  .tabbar button svg { width: 24px; height: 24px; }
+  .tabbar button.on { color: var(--red); }
+
+  /* 下から出るシート */
+  .backdrop { position: fixed; inset: 0; background: rgba(46, 30, 24, .45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 10; }
+  .backdrop.show { opacity: 1; pointer-events: auto; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 480px; margin: 0 auto; max-height: 92vh; overflow-y: auto; background: var(--card); border-radius: 28px 28px 0 0; padding: 10px 18px calc(20px + env(safe-area-inset-bottom)); transform: translateY(110%); transition: transform .25s ease; z-index: 11; }
+  .sheet.show { transform: none; }
+  .sheet .grip { width: 40px; height: 5px; border-radius: 99px; background: var(--line); margin: 0 auto 8px; }
+  .sheet .close { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 99px; background: var(--tile); color: var(--muted); display: grid; place-items: center; }
+  .sheet .close svg { width: 16px; height: 16px; }
+  .sheet .head { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 4px 0 14px; }
+  .sheet .head h4 { margin: 0; font-size: 18px; font-weight: 800; text-align: center; }
+  .field { margin-top: 12px; }
+  .field > label, .field > .lb { display: block; font-size: 12px; font-weight: 800; color: var(--muted); margin: 0 4px 6px; }
+  .input { width: 100%; padding: 12px 14px; border-radius: 14px; border: 0; background: var(--tile); outline: none; font-size: 16px; }
+  .input:focus { box-shadow: 0 0 0 2px var(--red-soft); }
+  select.input { -webkit-appearance: none; appearance: none; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .toggle { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px; border-radius: 14px; background: var(--tile); font-weight: 800; color: var(--muted); }
+  .toggle.on { background: var(--red); color: #fff; }
+  .check-line { display: flex; align-items: center; gap: 10px; padding: 10px 4px; font-size: 14px; font-weight: 700; }
+  .check-line input { width: 20px; height: 20px; accent-color: var(--red); }
+  .photo-line { display: flex; align-items: center; gap: 12px; }
+  .photo-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 99px; background: var(--tile); font-weight: 700; font-size: 14px; cursor: pointer; }
+  .photo-btn svg { width: 18px; height: 18px; }
+  .photo-btn input { display: none; }
+  .link { color: var(--red-deep); font-weight: 700; font-size: 13px; }
+  .confirm { text-align: center; padding: 8px 0 4px; }
+  .confirm p { font-weight: 800; margin: 6px 0 14px; }
+  .sheet .actions { margin-top: 18px; }
+
+  /* お知らせ */
+  .toast, .undo { position: fixed; left: 50%; bottom: calc(var(--tabbar) + 14px + env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: var(--text); color: #fff; padding: 10px 18px; border-radius: 14px; font-size: 13px; opacity: 0; transition: .25s; z-index: 20; pointer-events: none; white-space: nowrap; max-width: calc(100% - 24px); overflow: hidden; text-overflow: ellipsis; }
+  .toast.show, .undo.show { opacity: 1; transform: translate(-50%, 0); }
+  .undo { display: flex; align-items: center; gap: 14px; padding: 8px 8px 8px 18px; z-index: 19; }
+  .undo.show { pointer-events: auto; }
+  .undo button { padding: 8px 14px; border-radius: 10px; background: rgba(255, 255, 255, .14); color: #FFB3AD; font-weight: 800; font-size: 13px; }
+  .undo.show ~ .toast.show { bottom: calc(var(--tabbar) + 70px + env(safe-area-inset-bottom)); }
+</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; base-uri 'none'; form-action 'none'">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#E8352B">
+<link rel="stylesheet" href="shell.css">
+</head>
+<body>
+<div class="app" id="app"></div>
+<nav class="tabbar"><div class="in" id="tabs"></div></nav>
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet"></div>
+<div class="undo" id="undo"><span id="undo-text"></span><button data-a="undo">元に戻す</button></div>
+<div class="toast" id="toast"></div>
+
+<script src="build.js"></script>
+<script src="logic.js"></script>
+<script src="api.js"></script>
+<script src="queue.js"></script>
+<script src="shell.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
