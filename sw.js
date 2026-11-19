@@ -1,5 +1,5 @@
 // Service Worker。圏外でも画面を出す。下の版と一覧の2か所は、build-pwa.js が作るときに置き換える。
-var BUILD = '20261119-150810';
+var BUILD = '20261119-202315';
 var SHELL = ["./","api.js","app.js","build.js","icons/icon-180.png","icons/icon-192.png","icons/icon-512.png","img/index.json","index.html","logic.js","manifest.webmanifest","queue.js","shell.css","shell.js"];
 var SHELL_CACHE = 'kaimono-shell-' + BUILD;
 var IMG_PREFIX = 'kaimono-img-';
